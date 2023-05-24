@@ -3,8 +3,8 @@
     The hwTools package
 -------------------------
 
-This package provides tools for the manipulation of handwritten text in
-view of handwritten text recognition, including cursive writing.
+This python package provides tools for the manipulation of handwritten 
+text in view of handwritten text recognition, including cursive writing.
 
 The parser module is oriented toward the extraction of the various
 lines, words and single characters from a given scanned document.
