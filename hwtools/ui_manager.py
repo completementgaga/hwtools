@@ -1,3 +1,13 @@
+# hwTools -- Computer aided handwritten text parsing.
+# 
+# (C) 2023 Gaël Cousin.
+# You may use and distribute this program under the terms of MongoDB's 
+# Server Side Public License Version 1, a copy of which you should have received 
+# along with this program. Otherwise, see <https://spdx.org/licenses/SSPL-1.0.html>
+# or <https://www.mongodb.com/licensing/server-side-public-license>.
+# 
+# Gaël Cousin can be contacted at gcousin333@gmail.com.
+
 import os
 import shutil
 from abc import ABCMeta, abstractmethod
@@ -93,17 +103,17 @@ class Ui(metaclass=ABCMeta):
             word (Word): The Word to be parsed
             shapes (list[np.ndarray]): A list of cutting shape proposals
                 to choose from.
-            text (str): The retranscription of the text from which Word
+            text (str): The typeset version of the text from which Word
                 was extracted
             index (int): an estimate of the starting point of the
-                retranscription of Word in text.
+                typeset version of Word in text.
             daltonism (bool): Decides if a color-blind-friendly color
                 scheme is to be used.
 
         Returns:
             tuple[list[bool], str]: A 2d tuple containing the list of
                 booleans that retain which cutting shapes where chosen
-                as first entry and the retranscription of word as second
+                as first entry and the typeset version of word as second
                 entry.
         """
         pass
@@ -200,7 +210,7 @@ class LocalUi(Ui):
             "Please provide a title for the handwritten document.\n"
         )
         transcription_path = input(
-            "Please, provide the path to the transcripted"
+            "Please, provide the path to the transcribed"
             + " version of the document.\n"
         )
         return (scan_path, transcription_path, doc_title)
@@ -291,15 +301,15 @@ class LocalUi(Ui):
             word (Word): The Word to be parsed
             shapes (list[np.ndarray]): A list of cutting shape proposals
                 to choose from.
-            text (str): The retranscription of the text from which Word
+            text (str): The typeset version of the text from which Word
                 was extracted
             index (int): an estimate of the starting point of the
-                retranscription of Word in text.
+                typeset version of Word in text.
 
         Returns:
             tuple[list[bool], str]: A 2d tuple containing the list of
                 booleans that retain which cutting shapes where chosen
-                as first entry and the retranscription of word as second
+                as first entry and the typeset version of word as second
                 entry.
         """
 

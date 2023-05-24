@@ -1,3 +1,13 @@
+# hwTools -- Computer aided handwritten text parsing.
+# 
+# (C) 2023 Gaël Cousin.
+# You may use and distribute this program under the terms of MongoDB's 
+# Server Side Public License Version 1, a copy of which you should have received 
+# along with this program. Otherwise, see <https://spdx.org/licenses/SSPL-1.0.html>
+# or <https://www.mongodb.com/licensing/server-side-public-license>.
+# 
+# Gaël Cousin can be contacted at gcousin333@gmail.com.
+
 import os
 import sys
 import argparse
@@ -12,7 +22,7 @@ from . import config_tools
 from . import user_config
 
 
-from  . import log_config
+from . import log_config
 
 logger = log_config.logging.getLogger("hwtools.training_data_script")
 
@@ -20,7 +30,7 @@ Chosen_Ui = getattr(
     importlib.import_module(user_config.ui_module_name),
     user_config.ui_name,
 )
-data_path=user_config.data_path
+data_path = user_config.data_path
 
 
 def treat_word(
@@ -41,7 +51,7 @@ def treat_word(
           letters, these cuts are chosen among a certain number of
           cut proposals
 
-        - matching these letters with the transcripted text,
+        - matching these letters with the transcribed text,
 
         - storing the corresponding parser.MatchedGlyphs on disk,
 
@@ -53,7 +63,7 @@ def treat_word(
     Args:
         my_ui (Ui): The UI being used.
         my_data_manager: The data manager being used.
-        text (str): The compacted transcripted version of the text being
+        text (str): The compacted transcribed version of the text being
              parsed. Compacted means spaces and lineskips were removed.
         word (Word): The Word to be parsed.
         start_index (int): the index of text at which the
@@ -88,8 +98,8 @@ def treat_word(
         ]
 
         cut_word = word.cut(selected_shapes)
-        transcripted_word = text[dic["text_start"] : dic["text_stop"]]
-        my_matcher = parser.WordMatcher(cut_word, transcripted_word)
+        transcribed_word = text[dic["text_start"] : dic["text_stop"]]
+        my_matcher = parser.WordMatcher(cut_word, transcribed_word)
         try:
             matched_glyphs = my_matcher.match()
             can_match = True
@@ -98,7 +108,7 @@ def treat_word(
                 my_ui.say(
                     "It seems "
                     + "there is an issue with the last word, the numbers of"
-                    + " characters for the transcripted and handwritten"
+                    + " characters for the transcribed and handwritten"
                     + " texts do not match.\n"
                     + "Please check again this word."
                 )
@@ -121,12 +131,25 @@ def treat_word(
 
 
 def main():
-    argparser = argparse.ArgumentParser()
+    argparser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
+        prog="hwtools",
+        description="Computer aided handwritten text parsing and matching.\n"
+        + "Interactively select from precalculated cut proposals to "
+        + "separate the text in letters and match it with the transcribed "
+        + "version of the text.\n\n"
+        + "(C) 2023 Gaël Cousin.\n"
+        + "You may use and distribute this program under the terms of MongoDB's "
+        + "Server Side Public License Version 1, a copy of which you should "
+        + "have received along with this program. "
+        + "Otherwise, see <https://spdx.org/licenses/SSPL-1.0.html> "
+        + "or <https://www.mongodb.com/licensing/server-side-public-license>. "
+        + "Gaël Cousin can be contacted at gcousin333@gmail.com.",
+    )
     argparser.add_argument(
         "--daltonism",
         "-d",
-        help="Use this flag to get a "
-        + "color-blind-friendly color scheme in the GUI.",
+        help="get a "
+        + "color-blind-friendly color scheme in the GUI",
         action="store_true",
         default=False,
     )
@@ -134,7 +157,7 @@ def main():
         "--reset",
         action="store_true",
         default=False,
-        help="Use this flag if you want to reset the user configuration.",
+        help="interactively reset user configuration and exit",
     )
     args = argparser.parse_args()
     if args.reset:
@@ -172,11 +195,10 @@ def main():
         char_thickness,
         char_width,
     )
-    logger.info("Working with the scan "+ str(scan_path))
+    logger.info("Working with the scan " + str(scan_path))
     lines = page.lines()
     logger.info("The number of detected lines is: " + str(page.lines_number()))
     logger.info("The line heights are: " + str(page.line_heights()))
-
 
     # main loop
     my_data_manager.set_data_counters()

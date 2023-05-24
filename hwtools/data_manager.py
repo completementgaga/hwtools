@@ -1,3 +1,13 @@
+# hwTools -- Computer aided handwritten text parsing.
+# 
+# (C) 2023 Gaël Cousin.
+# You may use and distribute this program under the terms of MongoDB's 
+# Server Side Public License Version 1, a copy of which you should have received 
+# along with this program. Otherwise, see <https://spdx.org/licenses/SSPL-1.0.html>
+# or <https://www.mongodb.com/licensing/server-side-public-license>.
+# 
+# Gaël Cousin can be contacted at gcousin333@gmail.com.
+
 from __future__ import annotations
 import os
 import sys
@@ -58,7 +68,7 @@ class DataManager:
     # name used for scanned documents
     scan_name: str = "scan"
 
-    # name used for transcripted documents
+    # name used for transcribed documents
     transcription_name: str = "transcription"
 
     def __init__(self, storing_directory: str, binary_extracts: bool =True) -> None:
@@ -103,10 +113,10 @@ class DataManager:
         self.scan_path = self.store_file(source, self.scan_name + ext)
 
     def store_transcription(self, source: str) -> None:
-        """Store transcripted document in self.directory.
+        """Store transcribed document in self.directory.
 
         Args:
-            source (str): absolute path to the transcripted document.
+            source (str): absolute path to the transcribed document.
         """
         ext = os.path.splitext(source)[-1]
         self.transcription_path = self.store_file(
