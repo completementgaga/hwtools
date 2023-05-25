@@ -1,0 +1,538 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>hwtools.ui_manager &#8212; hwTools 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for hwtools.ui_manager</h1><div class="highlight"><pre>
+<span></span><span class="c1"># hwTools -- Computer aided handwritten text parsing.</span>
+<span class="c1"># </span>
+<span class="c1"># (C) 2023 Gaël Cousin.</span>
+<span class="c1"># You may use and distribute this program under the terms of MongoDB&#39;s </span>
+<span class="c1"># Server Side Public License Version 1, a copy of which you should have received </span>
+<span class="c1"># along with this program. Otherwise, see &lt;https://spdx.org/licenses/SSPL-1.0.html&gt;</span>
+<span class="c1"># or &lt;https://www.mongodb.com/licensing/server-side-public-license&gt;.</span>
+<span class="c1"># </span>
+<span class="c1"># Gaël Cousin can be contacted at gcousin333@gmail.com.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">---------------------</span>
+<span class="sd">The ui_manager module</span>
+<span class="sd">---------------------</span>
+
+<span class="sd">Deal with UI aspects.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABCMeta</span><span class="p">,</span> <span class="n">abstractmethod</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">skimage</span>
+<span class="kn">from</span> <span class="nn">np_gui</span> <span class="kn">import</span> <span class="n">image_annotation</span>
+<span class="kn">import</span> <span class="nn">np_gui.colors</span>
+<span class="kn">import</span> <span class="nn">np_gui.np_clickable_image</span> <span class="k">as</span> <span class="nn">np_clickable</span>
+
+
+<span class="kn">from</span> <span class="nn">.parser</span> <span class="kn">import</span> <span class="n">Word</span>
+
+
+<div class="viewcode-block" id="Ui"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui">[docs]</a><span class="k">class</span> <span class="nc">Ui</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ABCMeta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The abstract class for user interfaces.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="Ui.say"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.say">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">say</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inform the user, saying text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text (str): The text to forward to the user.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Ui.get_author"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.get_author">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_author</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask the user to choose an already known author or a new one.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: identifier for the author</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Ui.get_language"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.get_language">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_language</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask the user to provide language details.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the locale code for the language and region.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Ui.get_document"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.get_document">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_document</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get document data in view of its parsing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[str,str,str]: (input_path,transcription_path,doc_title)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Ui.get_char_width"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.get_char_width">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_char_width</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask for character width, in pixels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: character width</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Ui.get_char_height"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.get_char_height">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_char_height</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask for character height, in pixels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: character height</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Ui.get_char_thickness"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.get_char_thickness">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">get_char_thickness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask for character thickness, in pixels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: character thickness</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Ui.choose_cutting_shapes_and_match"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.Ui.choose_cutting_shapes_and_match">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">choose_cutting_shapes_and_match</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">word</span><span class="p">:</span> <span class="n">Word</span><span class="p">,</span>
+        <span class="n">shapes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">daltonism</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select cutting shapes for word and match it to text extract.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word (Word): The Word to be parsed</span>
+<span class="sd">            shapes (list[np.ndarray]): A list of cutting shape proposals</span>
+<span class="sd">                to choose from.</span>
+<span class="sd">            text (str): The typeset version of the text from which Word</span>
+<span class="sd">                was extracted</span>
+<span class="sd">            index (int): an estimate of the starting point of the</span>
+<span class="sd">                typeset version of Word in text.</span>
+<span class="sd">            daltonism (bool): Decides if a color-blind-friendly color</span>
+<span class="sd">                scheme is to be used.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[list[bool], str]: A 2d tuple containing the list of</span>
+<span class="sd">                booleans that retain which cutting shapes where chosen</span>
+<span class="sd">                as first entry and the typeset version of word as second</span>
+<span class="sd">                entry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="LocalUi"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi">[docs]</a><span class="k">class</span> <span class="nc">LocalUi</span><span class="p">(</span><span class="n">Ui</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A type of user interface, designed for local use of the parser.</span>
+
+<span class="sd">    The graphical user interaction is provided using the npGUI package.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    All the methods imposed by the parent abstract class Ui.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="LocalUi.say"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.say">[docs]</a>    <span class="k">def</span> <span class="nf">say</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inform the user, saying text.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            text (str): The text to forward to the user.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">text</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi.get_author"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.get_author">[docs]</a>    <span class="k">def</span> <span class="nf">get_author</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask the user to choose an already known author or a new one.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: identifier for the author</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s2">&quot;Indicate a name to identify the author of the&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; treated document.</span><span class="se">\n</span><span class="s2"> If other documents of this author were &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;already treated you might want to use her/his former identifier&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2"> to put in common the informations from all sessions.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi.detect_language"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.detect_language">[docs]</a>    <span class="k">def</span> <span class="nf">detect_language</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Detects the OS UI language.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the locale code for the language and region.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;posix&quot;</span><span class="p">:</span>
+            <span class="kn">import</span> <span class="nn">locale</span>
+            <span class="kn">import</span> <span class="nn">ctypes</span>
+
+            <span class="n">windll</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">kernel32</span>
+            <span class="k">return</span> <span class="n">locale</span><span class="o">.</span><span class="n">windows_locale</span><span class="p">[</span><span class="n">windll</span><span class="o">.</span><span class="n">GetUserDefaultUILanguage</span><span class="p">()]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;LANG&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi.get_language"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.get_language">[docs]</a>    <span class="k">def</span> <span class="nf">get_language</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask the user to provide language details.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: the locale code for the language and region.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">suggest_format</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">&quot; provide a language/country code in the format&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; fr_FR, en_GB, etc.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;This will be used to specify the language of your document.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">lang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detect_language</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">user_lang</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+                <span class="s2">&quot;We detected the language code &quot;</span>
+                <span class="o">+</span> <span class="n">lang</span>
+                <span class="o">+</span> <span class="s2">&quot; for your computer.</span><span class="se">\n</span><span class="s2">&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;Hit enter if you wish to use this language for&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; your document.</span><span class="se">\n</span><span class="s2"> Otherwise, please&quot;</span>
+                <span class="o">+</span> <span class="n">suggest_format</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">user_lang</span><span class="p">:</span>
+                <span class="n">lang</span> <span class="o">=</span> <span class="n">user_lang</span>
+            <span class="k">return</span> <span class="n">lang</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">input</span><span class="p">(</span><span class="s2">&quot;Please,&quot;</span> <span class="o">+</span> <span class="n">suggest_format</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi.get_document"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.get_document">[docs]</a>    <span class="k">def</span> <span class="nf">get_document</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get document data in view of its parsing.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[str,str,str]: (input_path,transcription_path,doc_title)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">scan_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s2">&quot;Please, provide the handwritten document path.&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;For this alpha version it must be a neat prefiltered png file,&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;that allows easy relevant conversion to a binary image.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="c1"># + &quot;It can be a png or jpg file containing the page to be treated or&quot;</span>
+        <span class="c1"># + &quot;a multiple pages pdf document.&quot;)</span>
+        <span class="n">doc_title</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s2">&quot;Please provide a title for the handwritten document.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="n">transcription_path</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s2">&quot;Please, provide the path to the transcribed&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; version of the document.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">scan_path</span><span class="p">,</span> <span class="n">transcription_path</span><span class="p">,</span> <span class="n">doc_title</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi.get_char_width"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.get_char_width">[docs]</a>    <span class="k">def</span> <span class="nf">get_char_width</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask for character width, in pixels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: character width</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s2">&quot;Please enter an estimate of characters&#39; width, in pixels.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; Consider the width fo a standard lower case letter, &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;like a or o.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi.get_char_height"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.get_char_height">[docs]</a>    <span class="k">def</span> <span class="nf">get_char_height</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask for character height, in pixels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: character height</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s2">&quot;Please enter an estimate of characters&#39; height, in pixels.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot; Consider the height fo a standard upper case letter, &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;like A, or a lower case l or t.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi.get_char_thickness"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.get_char_thickness">[docs]</a>    <span class="k">def</span> <span class="nf">get_char_thickness</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Ask for character thickness, in pixels.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: character thickness</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span>
+            <span class="s2">&quot;Please enter an estimate of characters&#39; thickness, in pixels.</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;We are meaning: the usual number of consecutive black pixels &quot;</span>
+            <span class="o">+</span> <span class="s2">&quot;in a character slice.</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="LocalUi._augmented_region"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi._augmented_region">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_augmented_region</span><span class="p">(</span>
+        <span class="n">region</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">handle_radius</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Augment a region by adding a circular handle and other pixels.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            region (np.ndarray): Binary image with the region as the</span>
+<span class="sd">                front pixels.</span>
+<span class="sd">            handle_radius (int): the radius of the added handle.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: new binary image, with added front pixels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">support</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">region</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">support</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">y</span>
+        <span class="n">y_center</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">r</span> <span class="o">+</span> <span class="n">handle_radius</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">region</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bool&quot;</span><span class="p">)</span>
+        <span class="n">output</span><span class="p">[</span><span class="n">region</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">ellipse</span> <span class="o">=</span> <span class="n">skimage</span><span class="o">.</span><span class="n">draw</span><span class="o">.</span><span class="n">ellipse</span><span class="p">(</span>
+            <span class="n">y_center</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">handle_radius</span><span class="p">,</span> <span class="n">handle_radius</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">region</span><span class="o">.</span><span class="n">shape</span>
+        <span class="p">)</span>
+        <span class="n">output</span><span class="p">[</span><span class="n">ellipse</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># We also add some pixels over the region, for more visibility</span>
+        <span class="n">output</span><span class="p">[</span><span class="n">y</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">r</span> <span class="p">:</span> <span class="n">y</span> <span class="o">-</span> <span class="n">r</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+<div class="viewcode-block" id="LocalUi.choose_cutting_shapes_and_match"><a class="viewcode-back" href="../../index.html#hwtools.ui_manager.LocalUi.choose_cutting_shapes_and_match">[docs]</a>    <span class="k">def</span> <span class="nf">choose_cutting_shapes_and_match</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">word</span><span class="p">:</span> <span class="n">Word</span><span class="p">,</span>
+        <span class="n">shapes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">daltonism</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Select cutting shapes for word and match it to text extract.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            word (Word): The Word to be parsed</span>
+<span class="sd">            shapes (list[np.ndarray]): A list of cutting shape proposals</span>
+<span class="sd">                to choose from.</span>
+<span class="sd">            text (str): The typeset version of the text from which Word</span>
+<span class="sd">                was extracted</span>
+<span class="sd">            index (int): an estimate of the starting point of the</span>
+<span class="sd">                typeset version of Word in text.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple[list[bool], str]: A 2d tuple containing the list of</span>
+<span class="sd">                booleans that retain which cutting shapes where chosen</span>
+<span class="sd">                as first entry and the typeset version of word as second</span>
+<span class="sd">                entry.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># A background_color option could be added, this is not ready yet.</span>
+        <span class="n">background_color</span> <span class="o">=</span> <span class="mi">255</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">3</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint8&quot;</span><span class="p">)</span>
+        <span class="c1"># Some complex GUI is beeing cooked up out of blocks.</span>
+        <span class="c1">#  First the top region of the GUI.</span>
+        <span class="n">regions</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">LocalUi</span><span class="o">.</span><span class="n">_augmented_region</span><span class="p">(</span><span class="n">region</span><span class="p">,</span> <span class="n">word</span><span class="o">.</span><span class="n">char_height</span> <span class="o">//</span> <span class="mi">6</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">region</span> <span class="ow">in</span> <span class="n">shapes</span>
+        <span class="p">]</span>
+        <span class="n">image_toggles</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">ImageToggles</span><span class="p">(</span>
+            <span class="n">word</span><span class="o">.</span><span class="n">complete_line</span><span class="p">,</span> <span class="n">regions</span><span class="p">,</span> <span class="n">daltonism</span><span class="o">=</span><span class="n">daltonism</span>
+        <span class="p">)</span>
+        <span class="c1"># The top block  will be the image_toggles block with even</span>
+        <span class="c1"># white spaces around it.</span>
+
+        <span class="c1"># we set here the minimal value of its width</span>
+        <span class="n">top_block_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">300</span><span class="p">,</span> <span class="n">image_toggles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">image_toggles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">top_block_width</span><span class="p">:</span>
+            <span class="n">left_white_image</span> <span class="o">=</span> <span class="mi">255</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">image_toggles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="p">(</span><span class="n">top_block_width</span> <span class="o">-</span> <span class="n">image_toggles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span>
+                    <span class="mi">3</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint8&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">right_white_image</span> <span class="o">=</span> <span class="mi">255</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span>
+                <span class="p">(</span>
+                    <span class="n">left_white_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">top_block_width</span>
+                    <span class="o">-</span> <span class="n">left_white_image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="o">-</span> <span class="n">image_toggles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="mi">3</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;uint8&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">top_block</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">ClickableImage</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">left_white_image</span><span class="p">,</span> <span class="n">image_toggles</span><span class="p">,</span> <span class="n">right_white_image</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">top_block</span> <span class="o">=</span> <span class="n">image_toggles</span>
+        <span class="n">top_shape</span> <span class="o">=</span> <span class="n">top_block</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="c1"># The bottom block is formed of three regions: a text displayer</span>
+        <span class="c1"># in the center and two backward/forward blocks on the sides.</span>
+        <span class="c1"># We build both of these side blocks from two blocks:</span>
+        <span class="c1"># backward and forward.</span>
+
+        <span class="n">bottom_height</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span> <span class="o">*</span> <span class="n">top_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">//</span> <span class="mi">10</span>
+
+        <span class="c1"># We deal here with the backward/forward blocks</span>
+        <span class="n">arrows_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">top_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">arrows_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">bottom_height</span><span class="p">,</span> <span class="n">arrows_width</span><span class="p">)</span>
+        <span class="n">forward_button_image</span> <span class="o">=</span> <span class="n">image_annotation</span><span class="o">.</span><span class="n">center_text</span><span class="p">(</span>
+            <span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="n">arrows_shape</span><span class="p">,</span> <span class="n">background_color</span><span class="o">=</span><span class="n">background_color</span>
+        <span class="p">)</span>
+        <span class="n">backward_button_image</span> <span class="o">=</span> <span class="n">image_annotation</span><span class="o">.</span><span class="n">center_text</span><span class="p">(</span>
+            <span class="s2">&quot;&lt;&quot;</span><span class="p">,</span> <span class="n">arrows_shape</span><span class="p">,</span> <span class="n">background_color</span><span class="o">=</span><span class="n">background_color</span>
+        <span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">backward_left_callback</span><span class="p">(</span><span class="n">dic</span><span class="p">):</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_slice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">],</span> <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">forward_left_callback</span><span class="p">(</span><span class="n">dic</span><span class="p">):</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">])</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_slice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">],</span> <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">backward_right_callback</span><span class="p">(</span><span class="n">dic</span><span class="p">):</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">],</span> <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_slice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">],</span> <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">])</span>
+
+        <span class="k">def</span> <span class="nf">forward_right_callback</span><span class="p">(</span><span class="n">dic</span><span class="p">):</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+            <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_slice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">],</span> <span class="n">dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">])</span>
+
+        <span class="n">backward_right</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+            <span class="n">backward_button_image</span><span class="p">,</span> <span class="n">backward_right_callback</span>
+        <span class="p">)</span>
+        <span class="n">backward_left</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+            <span class="n">backward_button_image</span><span class="p">,</span> <span class="n">backward_left_callback</span>
+        <span class="p">)</span>
+        <span class="n">forward_right</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+            <span class="n">forward_button_image</span><span class="p">,</span> <span class="n">forward_right_callback</span>
+        <span class="p">)</span>
+        <span class="n">forward_left</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+            <span class="n">forward_button_image</span><span class="p">,</span> <span class="n">forward_left_callback</span>
+        <span class="p">)</span>
+
+        <span class="n">text_width</span> <span class="o">=</span> <span class="n">top_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">arrows_width</span>
+        <span class="n">text_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">bottom_height</span><span class="p">,</span> <span class="n">text_width</span><span class="p">)</span>
+
+        <span class="n">text_display</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">SliceDisplayer</span><span class="p">(</span>
+            <span class="n">text</span><span class="p">,</span>
+            <span class="n">text_shape</span><span class="p">,</span>
+            <span class="n">slice_varname</span><span class="o">=</span><span class="s2">&quot;text_slice&quot;</span><span class="p">,</span>
+            <span class="n">background_color</span><span class="o">=</span><span class="n">background_color</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">bottom_block</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">ClickableImage</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">backward_left</span><span class="p">,</span>
+                <span class="n">forward_left</span><span class="p">,</span>
+                <span class="n">text_display</span><span class="p">,</span>
+                <span class="n">backward_right</span><span class="p">,</span>
+                <span class="n">forward_right</span><span class="p">,</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="c1"># We will actually add a radio button on the line before the &#39;top&#39;</span>
+        <span class="c1"># block, to allow the option to skip the word parsing.</span>
+        <span class="c1"># We call this line &#39;pretop&#39;, since it will be over the top block.</span>
+        <span class="n">radio_radius</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">radio_button</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">RadioButton</span><span class="p">(</span><span class="n">radio_radius</span><span class="p">)</span>
+        <span class="n">radio_button</span> <span class="o">=</span> <span class="n">radio_button</span><span class="o">.</span><span class="n">center_in_shape</span><span class="p">((</span><span class="mi">40</span><span class="p">,</span> <span class="mi">25</span><span class="p">))</span>
+        <span class="n">radio_label_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">radio_button</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="n">radio_label</span> <span class="o">=</span> <span class="n">image_annotation</span><span class="o">.</span><span class="n">center_text</span><span class="p">(</span><span class="s2">&quot;skip:&quot;</span><span class="p">,</span> <span class="n">radio_label_shape</span><span class="p">)</span>
+        <span class="n">pretop_left_margin</span> <span class="o">=</span> <span class="n">np_gui</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">mono_block</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">radio_label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">top_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">radio_label</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">pretop</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">ClickableImage</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">pretop_left_margin</span><span class="p">,</span> <span class="n">radio_label</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">main_column</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">ClickableImage</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">pretop</span><span class="p">,</span> <span class="n">top_block</span><span class="p">,</span> <span class="n">bottom_block</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">radio_bottom_margin</span> <span class="o">=</span> <span class="n">np_gui</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">mono_block</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">main_column</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">radio_button</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">radio_button</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;white&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">radio_column</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">ClickableImage</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">radio_button</span><span class="p">,</span> <span class="n">radio_bottom_margin</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">whole_gui</span> <span class="o">=</span> <span class="n">np_clickable</span><span class="o">.</span><span class="n">ClickableImage</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">main_column</span><span class="p">,</span> <span class="n">radio_column</span><span class="p">]</span>
+        <span class="p">)</span>
+
+        <span class="n">whole_gui</span><span class="o">.</span><span class="n">vars_dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span>
+        <span class="n">whole_gui</span><span class="o">.</span><span class="n">vars_dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">shapes</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">whole_gui</span><span class="o">.</span><span class="n">vars_dic</span><span class="p">[</span><span class="s2">&quot;text_slice&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span>
+            <span class="n">whole_gui</span><span class="o">.</span><span class="n">vars_dic</span><span class="p">[</span><span class="s2">&quot;text_start&quot;</span><span class="p">],</span> <span class="n">whole_gui</span><span class="o">.</span><span class="n">vars_dic</span><span class="p">[</span><span class="s2">&quot;text_stop&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">whole_gui</span><span class="o">.</span><span class="n">use</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Gaël Cousin.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.1.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

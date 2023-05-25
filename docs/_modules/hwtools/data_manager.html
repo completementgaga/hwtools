@@ -1,0 +1,525 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>hwtools.data_manager &#8212; hwTools 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for hwtools.data_manager</h1><div class="highlight"><pre>
+<span></span><span class="c1"># hwTools -- Computer aided handwritten text parsing.</span>
+<span class="c1"># </span>
+<span class="c1"># (C) 2023 Gaël Cousin.</span>
+<span class="c1"># You may use and distribute this program under the terms of MongoDB&#39;s </span>
+<span class="c1"># Server Side Public License Version 1, a copy of which you should have received </span>
+<span class="c1"># along with this program. Otherwise, see &lt;https://spdx.org/licenses/SSPL-1.0.html&gt;</span>
+<span class="c1"># or &lt;https://www.mongodb.com/licensing/server-side-public-license&gt;.</span>
+<span class="c1"># </span>
+<span class="c1"># Gaël Cousin can be contacted at gcousin333@gmail.com.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">-------------------------</span>
+<span class="sd">The data_manager module</span>
+<span class="sd">-------------------------</span>
+
+<span class="sd">Manage data input and output.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">skimage</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">parser</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">config_tools</span>
+
+
+
+<div class="viewcode-block" id="_create_directory"><a class="viewcode-back" href="../../index.html#hwtools.data_manager._create_directory">[docs]</a><span class="k">def</span> <span class="nf">_create_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">:</span><span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create local directory if it does not exist.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        directory (str): Desired absolute path to the directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Error: Creating directory. &quot;</span> <span class="o">+</span> <span class="n">directory</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="cook_storing_directory"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.cook_storing_directory">[docs]</a><span class="k">def</span> <span class="nf">cook_storing_directory</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">author</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_title</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cook up a storing directory path from author and doc_title.</span>
+
+<span class="sd">    It is a preparatory function, to define DataManagers.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        data_path (str): application&#39;s user data directory.</span>
+<span class="sd">        author (str): The parsed document&#39;s author.</span>
+<span class="sd">        doc_title (str): The desired title for the document.</span>
+
+
+<span class="sd">    Returns:</span>
+<span class="sd">        str: An absolute path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">timestamp</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">_%H:%M:%S&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">author</span><span class="p">,</span> <span class="n">doc_title</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">timestamp</span><span class="p">)</span></div>
+
+
+<span class="c1"># We could have an abstract class for data managers</span>
+<div class="viewcode-block" id="DataManager"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager">[docs]</a><span class="k">class</span> <span class="nc">DataManager</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;The class that stores and retrieves parsed data and documents.&quot;&quot;&quot;</span>
+
+    <span class="c1"># The extension used for image files in store_images</span>
+    <span class="n">image_ext</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;.tif&quot;</span>
+
+    <span class="c1"># a parameter of the store_image and retrieve_image methods</span>
+    <span class="n">contrast_factor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="mi">256</span>
+
+    <span class="c1"># name used for scanned documents</span>
+    <span class="n">scan_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;scan&quot;</span>
+
+    <span class="c1"># name used for transcribed documents</span>
+    <span class="n">transcription_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;transcription&quot;</span>
+
+<div class="viewcode-block" id="DataManager.__init__"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">storing_directory</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">binary_extracts</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiate DataManager and create its directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            storing_directory (str): The absolute path to the directory</span>
+<span class="sd">                where the data manager will store its information.</span>
+<span class="sd">            binary_extracts (bool): Defaults to True. If True all the</span>
+<span class="sd">            stored text extracts will be binary images. Otherwise,</span>
+<span class="sd">            the labeling that separates the basic_line and the various</span>
+<span class="sd">            satellites is preserved, but the images stored on disk are </span>
+<span class="sd">            less human readable.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">directory</span> <span class="o">=</span> <span class="n">storing_directory</span>
+        <span class="n">_create_directory</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">binary_extracts</span><span class="o">=</span><span class="n">binary_extracts</span></div>
+
+<div class="viewcode-block" id="DataManager.store_file"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_file">[docs]</a>    <span class="k">def</span> <span class="nf">store_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rel_target_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store source file to rel_target_path within self.directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source (str): The absolute path to the source file.</span>
+<span class="sd">            rel_target_path (str): The target path, relative to</span>
+<span class="sd">                self.directory.</span>
+
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: Absolute path to stored file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">abs_target_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="n">rel_target_path</span><span class="p">])</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copyfile</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">abs_target_path</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">abs_target_path</span></div>
+
+<div class="viewcode-block" id="DataManager.store_scan"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_scan">[docs]</a>    <span class="k">def</span> <span class="nf">store_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store scanned document in self.directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source (str): absolute path to the document.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">source</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_file</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_name</span> <span class="o">+</span> <span class="n">ext</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.store_transcription"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_transcription">[docs]</a>    <span class="k">def</span> <span class="nf">store_transcription</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store transcribed document in self.directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source (str): absolute path to the transcribed document.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">source</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transcription_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store_file</span><span class="p">(</span>
+            <span class="n">source</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transcription_name</span> <span class="o">+</span> <span class="n">ext</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.image_from_scan"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.image_from_scan">[docs]</a>    <span class="k">def</span> <span class="nf">image_from_scan</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">page_number</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return given page of the scanned document as a numpy 2darray.</span>
+
+<span class="sd">        In this first version the scan is supposed to have a unique page,</span>
+<span class="sd">        so that only  0 is a meaningful input.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            page_number (int, optional): The page number. Defaults to 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">skimage</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scan_path</span><span class="p">,</span> <span class="n">as_gray</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">compacted_text</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return self.text with new lines and blank spaces removed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: self.text with &#39;\n&#39;s and &#39; &#39;s removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transcription_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">text</span>
+
+<div class="viewcode-block" id="DataManager.store_image"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_image">[docs]</a>    <span class="k">def</span> <span class="nf">store_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_contrast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store image in self.directory as a file.</span>
+
+<span class="sd">            self.binary_extracts determines if the image is stored as a</span>
+<span class="sd">            binary image or if its labels are preserved.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (np.ndarray): The image as an ndarray</span>
+<span class="sd">            name (str): The name for the storing file, its extension</span>
+<span class="sd">                will be self.image_ext.</span>
+<span class="sd">            check_contrast (bool, optional): Display contrast warnings.</span>
+<span class="sd">                Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">binary_extracts</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store_image_binarily</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">check_contrast</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store_image_with_labels</span><span class="p">(</span><span class="n">image</span><span class="p">,</span><span class="n">name</span><span class="p">,</span><span class="n">check_contrast</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.retrieve_image"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.retrieve_image">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve stored image from its name.</span>
+
+<span class="sd">            self.binary_extracts determines if the image is considered as a</span>
+<span class="sd">            binary image or a labeled image. Hence, the DataManager that</span>
+<span class="sd">            stores the image and the one that retrieves the image must</span>
+<span class="sd">            have the same binary_extracts attribute.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name used when the image was stored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: The image in its original format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">binary_extracts</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_binary_image</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">retrieve_image_with_labels</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="DataManager.store_image_with_labels"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_image_with_labels">[docs]</a>    <span class="k">def</span> <span class="nf">store_image_with_labels</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_contrast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store labeled image in self.directory as a file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (np.ndarray): The image as an ndarray</span>
+<span class="sd">            name (str): The name for the storing file, its extension</span>
+<span class="sd">                will be self.image_ext.</span>
+<span class="sd">            check_contrast (bool, optional): Display contrast warnings.</span>
+<span class="sd">                Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No dot is expected in name, the file &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;format is specified and added automatically by the &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;store_image method.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">name</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ext</span>
+        <span class="n">path_to_image</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="n">skimage</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span>
+            <span class="n">path_to_image</span><span class="p">,</span>
+            <span class="mi">2</span><span class="o">**</span><span class="mi">16</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">contrast_factor</span> <span class="o">*</span> <span class="n">image</span><span class="p">,</span>
+            <span class="n">check_contrast</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.retrieve_image_with_labels"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.retrieve_image_with_labels">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_image_with_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve stored labeled image from its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name used when the image was stored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: The image in its original format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No dot is expected in name, the file &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;format is specified and added automatically by the &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;retrieve_image method.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">name</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ext</span>
+        <span class="n">path_to_image</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">skimage</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">path_to_image</span><span class="p">,</span> <span class="n">as_gray</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">16</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">image</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">contrast_factor</span></div>
+
+<div class="viewcode-block" id="DataManager.store_image_binarily"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_image_binarily">[docs]</a>    <span class="k">def</span> <span class="nf">store_image_binarily</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check_contrast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert image to a binary one and store it in self.directory.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            image (np.ndarray): The image as an ndarray</span>
+<span class="sd">            name (str): The name for the storing file, its extension</span>
+<span class="sd">                will be self.image_ext.</span>
+<span class="sd">            check_contrast (bool, optional): Display contrast warnings.</span>
+<span class="sd">                Defaults to False.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No dot is expected in name, the file &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;format is specified and added automatically by the &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;store_image method.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">name</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ext</span>
+        <span class="n">path_to_image</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="n">image</span><span class="o">=</span><span class="mi">255</span><span class="o">*</span><span class="p">(</span><span class="o">~</span><span class="p">(</span><span class="n">image</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+
+        <span class="n">skimage</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">imsave</span><span class="p">(</span>
+            <span class="n">path_to_image</span><span class="p">,</span>
+            <span class="n">image</span><span class="p">,</span>
+            <span class="n">check_contrast</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.retrieve_binary_image"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.retrieve_binary_image">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_binary_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve stored binary image from its name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): The name used when the image was stored.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: The image in its original format.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s2">&quot;.&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;No dot is expected in name, the file &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;format is specified and added automatically by the &quot;</span>
+                <span class="o">+</span> <span class="s2">&quot;retrieve_image method.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">name</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_ext</span>
+        <span class="n">path_to_image</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">skimage</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">imread</span><span class="p">(</span><span class="n">path_to_image</span><span class="p">,</span> <span class="n">as_gray</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="o">~</span><span class="p">(</span><span class="n">image</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.store_glyph"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_glyph">[docs]</a>    <span class="k">def</span> <span class="nf">store_glyph</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">matched_glyph</span><span class="p">:</span> <span class="n">MatchedGlyph</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">with_satellites</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the matched_glyph on disk.&quot;&quot;&quot;</span>
+
+        <span class="c1"># We could wish to normalize images for further comparison</span>
+        <span class="c1"># but we postpone this issue</span>
+        <span class="c1"># normalized_glyph = matched_glyph.glyph.normalized_image()</span>
+        <span class="n">glyph_image</span> <span class="o">=</span> <span class="n">matched_glyph</span><span class="o">.</span><span class="n">glyph</span><span class="o">.</span><span class="n">image</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">with_satellites</span><span class="p">:</span>
+            <span class="n">glyph_image</span> <span class="o">=</span> <span class="p">(</span><span class="n">glyph_image</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;uint16&quot;</span><span class="p">)</span>
+        <span class="n">sy</span><span class="p">,</span> <span class="n">sx</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">bounding_box_slices</span><span class="p">(</span><span class="n">glyph_image</span><span class="p">)</span>
+        <span class="n">normalized_glyph</span> <span class="o">=</span> <span class="n">glyph_image</span><span class="p">[:,</span> <span class="n">sx</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_image</span><span class="p">(</span><span class="n">normalized_glyph</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="n">path_to_csv</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s2">&quot;glyphs_metadata.csv&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_csv</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">&quot;excel&quot;</span><span class="p">)</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">name</span><span class="p">,</span>
+                    <span class="n">matched_glyph</span><span class="o">.</span><span class="n">string</span><span class="p">,</span>
+                    <span class="n">matched_glyph</span><span class="o">.</span><span class="n">glyph</span><span class="o">.</span><span class="n">char_height</span><span class="p">,</span>
+                    <span class="n">matched_glyph</span><span class="o">.</span><span class="n">glyph</span><span class="o">.</span><span class="n">char_width</span><span class="p">,</span>
+                    <span class="n">matched_glyph</span><span class="o">.</span><span class="n">glyph</span><span class="o">.</span><span class="n">char_thickness</span><span class="p">,</span>
+                    <span class="n">matched_glyph</span><span class="o">.</span><span class="n">glyph</span><span class="o">.</span><span class="n">line_height</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span></div>
+
+    <span class="c1"># The output of the next function will be of the format prescribed below.</span>
+    <span class="n">GlyphMetadata</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s2">&quot;GlyphMetadata&quot;</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;char_height&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;char_width&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;char_thickness&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;line_height&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="DataManager.retrieve_glyph_metadata"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.retrieve_glyph_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_glyph_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GlyphMetadata</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve MatchedGlyph metada from name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the stored MatchedGlyph</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            GlyphMetadata: The named tuple with the required entries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path_to_csv</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s2">&quot;glyphs_metadata.csv&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_csv</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">&quot;excel&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">fixed_row</span> <span class="o">=</span> <span class="n">row</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">:]))</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">GlyphMetadata</span><span class="o">.</span><span class="n">_make</span><span class="p">(</span><span class="n">fixed_row</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;We could not find an entry with this name in &quot;</span> <span class="o">+</span> <span class="s2">&quot;the metadata.&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.store_cut_info"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_cut_info">[docs]</a>    <span class="k">def</span> <span class="nf">store_cut_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cut_info</span><span class="p">:</span> <span class="n">CutInfo</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the CutInfo on disk.&quot;&quot;&quot;</span>
+
+        <span class="c1"># We could wish to normalize images for further comparison</span>
+        <span class="c1"># but we postpone this issue</span>
+        <span class="c1"># normalized_subword = cut_info.subword.normalized_image()</span>
+        <span class="n">normalized_subword</span> <span class="o">=</span> <span class="n">cut_info</span><span class="o">.</span><span class="n">subword</span><span class="o">.</span><span class="n">image</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_image</span><span class="p">(</span><span class="n">normalized_subword</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+        <span class="n">path_to_csv</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s2">&quot;cut_info_metadata.csv&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_csv</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">&quot;excel&quot;</span><span class="p">)</span>
+            <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">name</span><span class="p">,</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">cutting_shape_chars</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">cutting_shape_chars</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">cutting_shape_chars</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">subword</span><span class="o">.</span><span class="n">char_height</span><span class="p">,</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">subword</span><span class="o">.</span><span class="n">char_width</span><span class="p">,</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">subword</span><span class="o">.</span><span class="n">char_thickness</span><span class="p">,</span>
+                    <span class="n">cut_info</span><span class="o">.</span><span class="n">subword</span><span class="o">.</span><span class="n">line_height</span><span class="p">,</span>
+                <span class="p">]</span>
+            <span class="p">)</span></div>
+
+    <span class="c1"># The output of the next function will be of the format prescribed below.</span>
+    <span class="n">CutInfoMetadata</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s2">&quot;CutInfoMetadata&quot;</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="s2">&quot;name&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;quality&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;cutting_shape_chars&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;char_height&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;char_width&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;char_thickness&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;line_height&quot;</span><span class="p">,</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="DataManager.retrieve_cut_info_metadata"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.retrieve_cut_info_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">retrieve_cut_info_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CutInfoMetadata</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve CutInfo metada from name.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): name of the stored CutInfo</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CutInfoMetadata: The named tuple with the required entries.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">path_to_csv</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">directory</span><span class="p">,</span> <span class="s2">&quot;cut_info_metadata.csv&quot;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_to_csv</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csvfile</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">reader</span><span class="p">(</span><span class="n">csvfile</span><span class="p">,</span> <span class="n">dialect</span><span class="o">=</span><span class="s2">&quot;excel&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">fixed_row</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">row</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;True&quot;</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">]))]</span>
+                        <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="mi">5</span><span class="p">:]))</span>
+                    <span class="p">)</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">CutInfoMetadata</span><span class="o">.</span><span class="n">_make</span><span class="p">(</span><span class="n">fixed_row</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;We could not find an entry with this name in &quot;</span> <span class="o">+</span> <span class="s2">&quot;the metadata.&quot;</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="DataManager.set_data_counters"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.set_data_counters">[docs]</a>    <span class="k">def</span> <span class="nf">set_data_counters</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">matched_glyph_counter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cut_info_counter</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the counters for stored MatchedGlyphs and CutInfos.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            matched_glyph_counter (int, optional): The new value for the</span>
+<span class="sd">                MatchedGlyphs counter. Defaults to 0.</span>
+<span class="sd">            cut_info_counter (int, optional): The new value for the</span>
+<span class="sd">                CutInfos counter. Defaults to 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matched_glyph_counter</span> <span class="o">=</span> <span class="n">matched_glyph_counter</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cut_info_counter</span> <span class="o">=</span> <span class="n">cut_info_counter</span></div>
+
+<div class="viewcode-block" id="DataManager.store_data"><a class="viewcode-back" href="../../index.html#hwtools.data_manager.DataManager.store_data">[docs]</a>    <span class="k">def</span> <span class="nf">store_data</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">matched_glyphs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">MatchedGlyph</span><span class="p">],</span> <span class="n">cut_infos</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CutInfo</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store the passed lists of objects?</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            matched_glyphs (list[MatchedGlyph]): A list of MatchedGlyphs</span>
+<span class="sd">                to store.</span>
+<span class="sd">            cut_infos (list[CutInfo]): A list of CutInfos to store.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Storing the MatchedGlyphs.</span>
+        <span class="k">for</span> <span class="n">glyph</span> <span class="ow">in</span> <span class="n">matched_glyphs</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;char_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matched_glyph_counter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store_glyph</span><span class="p">(</span><span class="n">glyph</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">matched_glyph_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Storing the CutInfos.</span>
+        <span class="k">for</span> <span class="n">cut_info</span> <span class="ow">in</span> <span class="n">cut_infos</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;cut_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cut_info_counter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store_cut_info</span><span class="p">(</span><span class="n">cut_info</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cut_info_counter</span> <span class="o">+=</span> <span class="mi">1</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Gaël Cousin.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 6.1.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

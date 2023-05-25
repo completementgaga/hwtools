@@ -32,7 +32,7 @@ This package can be installed with pip as follows.
 $ pip install hwtools
 ```
 
-We highly recommand the use of a virtual environment:
+We recommand the use of a virtual environment.
 For example, if you have Poetry installed, a simple method is 
 to create a directory (say with path /my/directory/path)
 Then copy the pyproject.toml and poetry.lock to this directory.
@@ -98,7 +98,7 @@ You can exit the script at any time by hitting Ctrl+C in the terminal.
 You might also need to click the script's popping window (see below).
 
 ## User configuration
-If you first run hwtools script, you will be asked to provide
+If you first run the hwtools script, you will be asked to provide
 a directory for your extracted data. This can be reset using the --reset flag.
 
 
@@ -137,7 +137,7 @@ Notice I have the parameters:
 - character thickness 3
 
 I suggest you compress your own scans to reach similar parameter values.
-This is an important step to reduce computational costs.
+**This is an important step to reduce computational costs.**
 
 ### User interface
 
@@ -193,7 +193,7 @@ The most obvious enhancements for this package should be:
     * you can edit the config file on your machine to use your alternate UI.
     * On Windows it is in your %LOCALAPPDATA%/hwtools
     * On other systems it is in ~/.config/hwtools
- - exploit the collected data for handwriting recognition
+ - exploit the collected data for handwriting recognition, I am working on this.
 
 Feel free to open the discussion through issues and pull requests on the [GitHub repository](https://github.com/completementgaga/hwtools).
 

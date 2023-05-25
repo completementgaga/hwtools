@@ -26,4 +26,5 @@ html: Makefile
 
 latexpdf: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	cp build/latex/hwtools.pdf ../package_manual.pdf
 
