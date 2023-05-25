@@ -7,7 +7,14 @@
 # or <https://www.mongodb.com/licensing/server-side-public-license>.
 # 
 # Gaël Cousin can be contacted at gcousin333@gmail.com.
+"""
+---------------------
+The ui_manager module
+---------------------
 
+Deal with UI aspects.
+
+"""
 import os
 import shutil
 from abc import ABCMeta, abstractmethod

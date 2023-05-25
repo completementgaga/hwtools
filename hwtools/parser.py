@@ -1,12 +1,22 @@
 # hwTools -- Computer aided handwritten text parsing.
-# 
+#
 # (C) 2023 Gaël Cousin.
-# You may use and distribute this program under the terms of MongoDB's 
-# Server Side Public License Version 1, a copy of which you should have received 
+# You may use and distribute this program under the terms of MongoDB's
+# Server Side Public License Version 1, a copy of which you should have received
 # along with this program. Otherwise, see <https://spdx.org/licenses/SSPL-1.0.html>
 # or <https://www.mongodb.com/licensing/server-side-public-license>.
-# 
+#
 # Gaël Cousin can be contacted at gcousin333@gmail.com.
+
+"""
+-------------------------
+    The parser module
+-------------------------
+
+Gather facilities for manipulation of handwritten text images:
+extraction of lines, words, characters, etc.
+
+"""
 
 from __future__ import annotations
 from typing import Any
@@ -20,10 +30,9 @@ import numpy as np
 import scipy.ndimage as ndimage
 from numba import jit
 
-from  . import log_config
+from . import log_config
 
 logger = log_config.logging.getLogger("hwtools.parser")
-
 
 
 def _front_pixel(binary_image):
@@ -73,6 +82,7 @@ def horizontal(
         np.ndarray() | list[np.ndarray]: A boolean image that contains
         all the horizontal lines if as_list==False, else a list of
         such images, each containing a unique line.
+
     """
     lines_list = []
     for i in centers:
@@ -116,7 +126,7 @@ def bounding_box_slices(image: np.ndarray) -> tuple[slice, slice]:
 
 # To optimize: eliminate extraneous version of bounding box, another version is
 # appearing as a method below.
-@jit
+@jit(nopython=True)
 def bounding_box(image: np.ndarray) -> np.ndarray:
     """Return the bounding box of a 2d image.
 
@@ -135,7 +145,7 @@ def bounding_box(image: np.ndarray) -> np.ndarray:
 
 # we could try to optimize compsize below stopping once
 #  an expected threshold is reached
-@jit
+@jit(nopython=True)
 def comp_size(labels: np.ndarray, val: int) -> int:
     """Return the size of a component in a labeled image.
 
@@ -196,19 +206,6 @@ class PageExtract:
     """A class for page extracts, to retain context information.
 
     It has strong relations with the class Page.
-    The instances attributes are the ones specified by the __init__
-    method, namely:
-            image (np.ndarray): The image of the page extract
-            char_height (int): An estimate of the characters' height.
-            char_thickness (int): An estimate of the characters'
-                thickness.
-            char_width (int): An estimate of the characters' width.
-            corner_y (int): the top-left corner y coordinate within the
-                parent page.
-            corner_x (int): the top-left corner x coordinate within the
-                parent page.
-            parent_page_shape (tuple[int,int]): The shape of the parent
-            page.
     """
 
     def __init__(
@@ -550,6 +547,8 @@ class Line:
 
 
 class Word(Line):
+    """A subclass of Line that deals with images of handwrittent words."""
+
     def __init__(self, page_extract, line_height):
         super().__init__(page_extract, line_height)
         self._cutting_shapes = None
@@ -1029,7 +1028,9 @@ class Word(Line):
         elif np.amin(pixel_number) < np.amax(pixel_number) - pixel_tolerance:
             # pixel event
             logger.info("pixel_event")
-            logger.info(str((np.amin(pixel_number), np.amax(pixel_number), p, q)))
+            logger.info(
+                str((np.amin(pixel_number), np.amax(pixel_number), p, q))
+            )
             return True
         else:
             return False
@@ -1272,13 +1273,14 @@ class Word(Line):
         This list is filtered from left to right, to ensure some kind of
         event happens between two succesive points: either height events
         or pixel events.
-            - We consider some height event happens between two
-        elements of the list if the part of self.basic_component that links
-        them has at least a height variation of 'height_tolerance'.
-            - We consider some pixel  event happens between two
-        elements of the list if the part of self.basic_component that links
-        them has at least a variation of 'pixel_tolerance' for the number
-        of pixel in its 1-pixel wide vertical slices.
+
+         - We consider some height event happens between two
+                elements of the list if the part of self.basic_component that links
+                them has at least a height variation of 'height_tolerance'.
+         - We consider some pixel  event happens between two
+                elements of the list if the part of self.basic_component that links
+                them has at least a variation of 'pixel_tolerance' for the number
+                of pixel in its 1-pixel wide vertical slices.
 
         Any element of the list is eliminated if no such event happens
         between it and the preceding element (of the updated list).
@@ -1506,11 +1508,11 @@ class Page:
         smoothing_window_width: int | None = None,
         noise_removal: int | None = None,
     ) -> list[int]:
-        """ "Checks if the line heights are already computed.
+        """Checks if the line heights are already computed.
         If yes, these are returned. Else they are computed.
         If one of the optional parameter values is specified,
         the line heights are recomputed with the prescribed parameter
-         values.
+        values.
 
         The algorithm is based on finding the local maxima of the function
         height->pixel count of the 1-pixel-high vertical line with this

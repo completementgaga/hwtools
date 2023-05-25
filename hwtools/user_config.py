@@ -8,6 +8,7 @@
 # 
 # Gaël Cousin can be contacted at gcousin333@gmail.com.
 
+"""Provide user configuration constants."""
 import sys
 
 from . import config_tools

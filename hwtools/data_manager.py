@@ -8,6 +8,13 @@
 # 
 # Gaël Cousin can be contacted at gcousin333@gmail.com.
 
+"""
+-------------------------
+The data_manager module
+-------------------------
+
+Manage data input and output."""
+
 from __future__ import annotations
 import os
 import sys
@@ -136,7 +143,7 @@ class DataManager:
 
     @property
     def compacted_text(self)-> str:
-        """Return self.text with '\n's and ' 's removed.
+        """Return self.text with new lines and blank spaces removed.
 
         Returns:
             str: self.text with '\n's and ' 's removed.

@@ -14,14 +14,14 @@ import os
 import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
-sys.path.insert(0, os.path.abspath("../../np_gui"))
+sys.path.insert(0, os.path.abspath("../../hwtools"))
 
 import tomli
 
 
 # -- Project information -----------------------------------------------------
 
-project = "npGUI"
+project = "hwTools"
 copyright = "2023, Gaël Cousin"
 author = "Gaël Cousin"
 with open("../../pyproject.toml", "rb") as f:

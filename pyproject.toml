@@ -1,19 +1,19 @@
 [tool.poetry]
-name = "handwriting-recognition"
+name = "hwTools"
 version = "0.0.1"
-description = "A library to handle scanned text and extract its characters in view of transcripting the text, after some human assisted labeling for training."
+description = "A library to parse Handwritten Text."
 authors = ["Gaël Cousin <gcousin333@gmail.com>"]
 license = "MongoDB's Server Side Public License Version 1"
 readme = "README.md"
-packages = [{include = "handwriting_recognition"}]
+packages = [{include = "hwtools"}]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.10.6"
 numpy = "^1.21.0"
-numba = "^0.56.4"
+numba = ">= 0.56.4, < 1"
 matplotlib = "^3.5.1"
-scikit-image = "^0.19.3"
-np-gui = "^0.0.4"
+scikit-image = ">= 0.19.3, < 1"
+np-gui = "> 0.0.3, < 1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -24,3 +24,6 @@ pytest = ">=7.2.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+hwtools = 'hwtools.training_data_script:main'

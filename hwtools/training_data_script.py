@@ -7,7 +7,14 @@
 # or <https://www.mongodb.com/licensing/server-side-public-license>.
 # 
 # Gaël Cousin can be contacted at gcousin333@gmail.com.
+"""
+-------------------------------
+the training_data_script module 
+-------------------------------
 
+Provide the script for interactive parsing.
+
+"""
 import os
 import sys
 import argparse
@@ -131,6 +138,7 @@ def treat_word(
 
 
 def main():
+    """Offer the terminal command."""
     argparser = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
         prog="hwtools",
         description="Computer aided handwritten text parsing and matching.\n"

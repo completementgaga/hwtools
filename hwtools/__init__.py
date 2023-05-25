@@ -42,3 +42,4 @@ labeled data and the new text.
 from . import parser
 from . import data_manager
 from . import ui_manager
+# from . import training_data_script

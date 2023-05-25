@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to npGUI's documentation!
+Welcome to hwTools's documentation!
 ==============================================
 
 .. toctree::
@@ -19,15 +19,17 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. automodule:: np_gui
+.. automodule:: hwtools
 
-.. automodule:: np_gui.np_clickable_image
-   :members:
-   :private-members:
-
-.. automodule:: np_gui.colors
+.. automodule:: hwtools.parser
    :members:
 
-.. automodule:: np_gui.image_annotation
+.. automodule:: hwtools.ui_manager
+   :members:
+
+.. automodule:: hwtools.data_manager
+   :members:
+
+.. automodule:: hwtools.training_data_script
    :members:
 
