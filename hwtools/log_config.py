@@ -7,7 +7,7 @@
 # or <https://www.mongodb.com/licensing/server-side-public-license>.
 # 
 # Gaël Cousin can be contacted at gcousin333@gmail.com.
-
+"""Configure logs."""
 import logging
 import os
 

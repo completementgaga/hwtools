@@ -7,6 +7,7 @@
 # or <https://www.mongodb.com/licensing/server-side-public-license>.
 # 
 # Gaël Cousin can be contacted at gcousin333@gmail.com.
+"""Allow to define user config path and user data path."""
 
 import os
 import shutil

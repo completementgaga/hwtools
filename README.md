@@ -146,7 +146,7 @@ For each word in the text a window like below will pop up.
 
 | Preview of the GUI|
 |:-----------------------------:|
-|<img src="https://github.com/completementgaga/hwtools/blob/c4b76a9ca9e4bde3c811e00512d8d1f257706534/screenshots/GUI_preview.png"  width="500em" title="GUI preview">|
+|<img src="https://raw.githubusercontent.com/completementgaga/hwtools/f3b4892c31381baf6de2fe8ca9af9e6402ed7755/screenshots/GUI_preview.png"  width="500em" title="GUI preview">|
 
 Observe the displayed cut proposals, with their round handles. When the window 
 appears, they are supposed valid. Click on them to toggle from valid (green) to non-valid(red)
