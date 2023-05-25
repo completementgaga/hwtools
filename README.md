@@ -53,7 +53,7 @@ A detailed documentation of this package is available on
 [GitHub Pages](https://completementgaga.github.io/hwtools/) --- as a website.
 
 It is also available in pdf format
-[here](https://github.com/completementgaga/copyright-claim/blob/master/sphinx/build/latex/hwtools.pdf).
+[here](https://github.com/completementgaga/hwtools/blob/c4b76a9ca9e4bde3c811e00512d8d1f257706534/package_manual.pdf).
 
 
 ### Command line script
@@ -146,7 +146,7 @@ For each word in the text a window like below will pop up.
 
 | Preview of the GUI|
 |:-----------------------------:|
-|<img src="screenshots/GUI_preview.png"  width="500em" title="clock.py preview">|
+|<img src="https://github.com/completementgaga/hwtools/blob/c4b76a9ca9e4bde3c811e00512d8d1f257706534/screenshots/GUI_preview.png"  width="500em" title="GUI preview">|
 
 Observe the displayed cut proposals, with their round handles. When the window 
 appears, they are supposed valid. Click on them to toggle from valid (green) to non-valid(red)
@@ -158,7 +158,7 @@ the transcribed version is displayed. It is hopefully close to be the transcript
 this transcription using the arrows around it. The arrows on the left modify
 the starting point of the extract, the arrows on the right modify its end.
 
-When this done, close the window to pass to a new word.
+When this is done, close the window to pass to a new word.
 
 If, due to any human or robot failure, you believe you cannot arrange to cut 
 correctly the word or to align it with its transcription, you can skip
